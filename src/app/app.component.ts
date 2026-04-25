@@ -13,7 +13,7 @@ import { BranchesView } from './branches/branches-view';
 export class AppComponent implements OnInit {
   greetingMessage = '';
   protected options = signal<{ label: string; value: string }[]>([]);
-  protected readonly textControl = new FormControl('');
+  protected refreshing = signal(false);
 
   ngOnInit(): void {
     this.getOptions();
@@ -25,12 +25,6 @@ export class AppComponent implements OnInit {
 
     // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
     invoke<string>('greet', { name }).then((text) => {
-      this.greetingMessage = text;
-    });
-  }
-
-  protected test(): void {
-    invoke<string>('test', { text: this.textControl.value }).then((text) => {
       this.greetingMessage = text;
     });
   }
@@ -48,5 +42,10 @@ export class AppComponent implements OnInit {
     });
   }
 
-  protected refresh(): void {}
+  protected refresh(): void {
+    this.refreshing.set(true);
+    setTimeout(() => {
+      this.refreshing.set(false);
+    }, 1000);
+  }
 }

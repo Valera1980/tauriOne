@@ -2,6 +2,7 @@ import {
   Component,
   effect,
   ElementRef,
+  input,
   OnInit,
   signal,
   viewChild,
@@ -51,7 +52,7 @@ export class BranchesView implements OnInit {
     }),
   };
 
-  refreshing = signal(false);
+  refreshing = input(false);
 
   protected readonly hoveredCommit = signal<CommitInfo | null>(null);
 
@@ -71,7 +72,6 @@ export class BranchesView implements OnInit {
     invoke<CommitInfo[]>('graph_log', { path: 'C:/rust/tauriOne' }).then(
       (commits) => {
         this.renderGraph(commits);
-        this.refreshing.set(false);
       },
     );
   }
