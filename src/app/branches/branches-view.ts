@@ -69,7 +69,10 @@ export class BranchesView implements OnInit {
 
   private initUi(): void {
     invoke<CommitInfo[]>('graph_log', { path: 'C:/rust/tauriOne' }).then(
-      (commits) => this.renderGraph(commits),
+      (commits) => {
+        this.renderGraph(commits);
+        this.refreshing.set(false);
+      },
     );
   }
 
