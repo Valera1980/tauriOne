@@ -49,6 +49,6 @@ export class AppComponent implements OnInit {
   }
 
   private async getCommits(): Promise<void> {
-    const commits = await invoke<any[]>("commit_list", { path: 'C:/rust/tauriOne', branch: 'master' });
+    const commits = await invoke<any[]>("commit_list", { path: 'C:/rust/tauriOne', branch: 'main' });
   }
 }
