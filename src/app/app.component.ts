@@ -13,7 +13,7 @@ import { BranchesView } from './branches/branches-view';
 export class AppComponent implements OnInit {
   greetingMessage = '';
   protected options = signal<{ label: string; value: string }[]>([]);
-  protected refreshing = signal(false);
+  protected refreshing = signal<Symbol | null>(null);
 
   ngOnInit(): void {
     this.getOptions();
@@ -43,9 +43,6 @@ export class AppComponent implements OnInit {
   }
 
   protected refresh(): void {
-    this.refreshing.set(true);
-    setTimeout(() => {
-      this.refreshing.set(false);
-    }, 1000);
+    this.refreshing.set(Symbol());
   }
 }

@@ -38,13 +38,13 @@ export class BranchesView implements OnInit {
       },
       commit: {
         spacing: 40,
-        dot: { size: 12, strokeColor: '#fff', strokeWidth: 4 },
+        dot: { size: 6, strokeColor: '#fff', strokeWidth: 4 },
         message: { font: 'normal 12' },
       },
     }),
   };
 
-  refreshing = input(false);
+  refreshing = input<Symbol | null>(null);
   protected readonly hoveredCommit = signal<CommitInfo | null>(null);
 
   constructor() {
@@ -115,6 +115,7 @@ export class BranchesView implements OnInit {
 
     for (const commit of [...commits].reverse()) {
       const branchName = commitToBranch.get(commit.id) ?? 'main';
+
       const branch = getOrCreateBranch(branchName);
 
       const isMerge = commit.parents.length >= 2;
@@ -129,10 +130,29 @@ export class BranchesView implements OnInit {
           hash: commit.id.slice(0, 7),
           subject: commit.message,
           author: commit.author,
-          onMouseOver: () => this.hoveredCommit.set(commit),
-          onMouseOut: () => this.hoveredCommit.set(null),
+          onMouseOver: (c) => {
+            this.hoveredCommit.set(commit);
+            document.body.style.cursor = 'pointer';
+          },
+          onMouseOut: () => {
+            this.hoveredCommit.set(null);
+            document.body.style.cursor = 'default';
+          },
         });
       }
+    }
+
+    setTimeout(() => this.applyDotHover(container));
+  }
+
+  private applyDotHover(container: HTMLElement): void {
+    for (const el of container.querySelectorAll<SVGCircleElement>('circle')) {
+      el.style.transition = 'transform 0.15s ease';
+      el.style.transformBox = 'fill-box';
+      el.style.transformOrigin = 'center';
+      el.style.pointerEvents = 'all';
+      el.addEventListener('mouseenter', () => el.style.transform = 'scale(1.5)');
+      el.addEventListener('mouseleave', () => el.style.transform = '');
     }
   }
 }
