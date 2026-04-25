@@ -7,7 +7,7 @@ import { invoke,  } from "@tauri-apps/api/core";
   selector: "app-root",
   imports: [RouterOutlet, ReactiveFormsModule],
   templateUrl: "./app.component.html",
-  styleUrl: "./app.component.css",
+  styleUrl: "./app.component.scss",
 })
 export class AppComponent implements OnInit {
   
