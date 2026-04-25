@@ -1,5 +1,6 @@
 import {
   Component,
+  effect,
   ElementRef,
   OnInit,
   signal,
@@ -49,9 +50,24 @@ export class BranchesView implements OnInit {
       },
     }),
   };
+
+  refreshing = signal(false);
+
   protected readonly hoveredCommit = signal<CommitInfo | null>(null);
 
+  constructor() {
+    effect(() => {
+      if (this.refreshing()) {
+        this.initUi();
+      }
+    });
+  }
+
   ngOnInit(): void {
+    this.initUi();
+  }
+
+  private initUi(): void {
     invoke<CommitInfo[]>('graph_log', { path: 'C:/rust/tauriOne' }).then(
       (commits) => this.renderGraph(commits),
     );

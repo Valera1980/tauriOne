@@ -47,4 +47,6 @@ export class AppComponent implements OnInit {
       branch: 'main',
     });
   }
+
+  protected refresh(): void {}
 }
