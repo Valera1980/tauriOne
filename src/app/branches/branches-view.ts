@@ -34,22 +34,22 @@ export class BranchesView implements OnInit {
       branch: {
         lineWidth: 4,
         spacing: 40,
-        label: { font: 'normal 12' },
+        label: { font: 'normal 12px Inter, sans-serif' },
       },
       commit: {
         spacing: 40,
-        dot: { size: 6, strokeColor: '#fff', strokeWidth: 4 },
-        message: { font: 'normal 12' },
+        dot: { size: 6, strokeColor: '#afafaf', strokeWidth: 4 },
+        message: { font: 'normal 12px Inter, sans-serif', color: '#afafaf' },
       },
     }),
   };
 
-  refreshing = input<Symbol | null>(null);
+  refreshTick = input<number>(0);
   protected readonly hoveredCommit = signal<CommitInfo | null>(null);
 
   constructor() {
     effect(() => {
-      if (this.refreshing()) {
+      if (this.refreshTick() > 0) {
         this.initUi();
       }
     });
@@ -57,7 +57,6 @@ export class BranchesView implements OnInit {
 
   ngOnInit(): void {
     this.initUi();
-    // some test message
   }
 
   private initUi(): void {
@@ -66,8 +65,6 @@ export class BranchesView implements OnInit {
     );
   }
 
-  // Walk first-parent chain from each branch tip to assign commits to branches.
-  // main is processed first so shared history belongs to main.
   private assignBranches(commits: CommitInfo[]): Map<string, string> {
     const commitMap = new Map(commits.map((c) => [c.id, c]));
     const commitToBranch = new Map<string, string>();
@@ -115,7 +112,6 @@ export class BranchesView implements OnInit {
 
     for (const commit of [...commits].reverse()) {
       const branchName = commitToBranch.get(commit.id) ?? 'main';
-
       const branch = getOrCreateBranch(branchName);
 
       const isMerge = commit.parents.length >= 2;
@@ -130,7 +126,7 @@ export class BranchesView implements OnInit {
           hash: commit.id.slice(0, 7),
           subject: commit.message,
           author: commit.author,
-          onMouseOver: (c) => {
+          onMouseOver: () => {
             this.hoveredCommit.set(commit);
             document.body.style.cursor = 'pointer';
           },
@@ -151,8 +147,11 @@ export class BranchesView implements OnInit {
       el.style.transformBox = 'fill-box';
       el.style.transformOrigin = 'center';
       el.style.pointerEvents = 'all';
-      el.addEventListener('mouseenter', () => el.style.transform = 'scale(1.5)');
-      el.addEventListener('mouseleave', () => el.style.transform = '');
+      el.addEventListener(
+        'mouseenter',
+        () => (el.style.transform = 'scale(1.5)'),
+      );
+      el.addEventListener('mouseleave', () => (el.style.transform = ''));
     }
   }
 }

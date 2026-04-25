@@ -1,5 +1,5 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
 import { RouterOutlet } from '@angular/router';
 import { invoke } from '@tauri-apps/api/core';
 import { BranchesView } from './branches/branches-view';
@@ -13,17 +13,14 @@ import { BranchesView } from './branches/branches-view';
 export class AppComponent implements OnInit {
   greetingMessage = '';
   protected options = signal<{ label: string; value: string }[]>([]);
-  protected refreshing = signal<Symbol | null>(null);
+  protected refreshTick = signal(0);
 
   ngOnInit(): void {
     this.getOptions();
-    this.getCommits();
   }
 
   protected greet(event: SubmitEvent, name: string): void {
     event.preventDefault();
-
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
     invoke<string>('greet', { name }).then((text) => {
       this.greetingMessage = text;
     });
@@ -35,14 +32,7 @@ export class AppComponent implements OnInit {
     this.options.set(opts);
   }
 
-  private async getCommits(): Promise<void> {
-    const commits = await invoke<any[]>('commit_list', {
-      path: 'C:/rust/tauriOne',
-      branch: 'main',
-    });
-  }
-
   protected refresh(): void {
-    this.refreshing.set(Symbol());
+    this.refreshTick.update((n) => n + 1);
   }
 }
