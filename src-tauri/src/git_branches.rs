@@ -5,8 +5,8 @@ use serde::Serialize;
 pub struct Branch {
     name: String,
     is_head: bool,
-      commit_id: String,      // latest commit hash
-    commit_message: String, // latest commit message
+    commit_id: String,      // latest commit hash
+    commit_message: String, //   latest commit message
 }
 
 #[tauri::command]
@@ -22,7 +22,12 @@ pub fn branches_list(path: String) -> Result<Vec<Branch>, String> {
             let commit = branch.get().peel_to_commit().ok()?;
             let commit_id = commit.id().to_string();
             let commit_message = commit.message().unwrap_or("").to_string();
-            Some(Branch { name, is_head, commit_id, commit_message })
+            Some(Branch {
+                name,
+                is_head,
+                commit_id,
+                commit_message,
+            })
         })
         .collect();
 
