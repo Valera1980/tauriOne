@@ -65,6 +65,7 @@ export class BranchesView implements OnInit {
 
   ngOnInit(): void {
     this.initUi();
+    // some test message
   }
 
   private initUi(): void {
