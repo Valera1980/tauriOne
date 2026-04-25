@@ -1,3 +1,29 @@
-@for (item of branches(); track $index) {
-<p>{{ item.name}}</p>
-}
+<div class="view">
+  <div class="graph" #graphContainer></div>
+
+  <aside class="panel" [class.panel--visible]="hoveredCommit()">
+    @if (hoveredCommit(); as commit) {
+      <div class="panel__hash">{{ commit.id.slice(0, 7) }}</div>
+      <div class="panel__message">{{ commit.message }}</div>
+      <div class="panel__divider"></div>
+      <div class="panel__row">
+        <span class="panel__label">Author</span>
+        <span class="panel__value">{{ commit.author }}</span>
+      </div>
+      <div class="panel__row">
+        <span class="panel__label">Date</span>
+        <span class="panel__value">{{ commit.time * 1000 | date: 'dd MMM yyyy, HH:mm' }}</span>
+      </div>
+      @if (commit.branches.length) {
+        <div class="panel__row">
+          <span class="panel__label">Branches</span>
+          <div class="panel__tags">
+            @for (branch of commit.branches; track branch) {
+              <span class="panel__tag">{{ branch }}</span>
+            }
+          </div>
+        </div>
+      }
+    }
+  </aside>
+</div>

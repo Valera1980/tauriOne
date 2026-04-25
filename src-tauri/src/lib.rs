@@ -13,7 +13,8 @@ pub fn run() {
         dropdown_options::dropdown_options,
         git_branches::branches_list,
         test::test,
-        git_commits::commit_list
+        git_commits::commit_list,
+        git_commits::graph_log
     ]);
 
     #[cfg(debug_assertions)]

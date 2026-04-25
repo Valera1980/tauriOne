@@ -1,14 +1,15 @@
-use git2::{BranchType, Repository};
+use git2::{BranchType, Repository, Sort};
 use serde::Serialize;
 use specta::Type;
 
 #[derive(Serialize, Type)]
 pub struct CommitInfo {
-   id: String,
-   hash: String,
-   author: String,
-   message: String,
-   time: String
+    pub id: String,
+    pub author: String,
+    pub message: String,
+    pub time: i64,
+    pub parents: Vec<String>,
+    pub branches: Vec<String>,
 }
 
 #[tauri::command]
@@ -28,18 +29,72 @@ pub fn commit_list(path: String, branch: String) -> Result<Vec<CommitInfo>, Stri
     let mut revwalk = repo.revwalk().map_err(|e| e.to_string())?;
     revwalk.push(start_oid).map_err(|e| e.to_string())?;
 
-    let mut commits = Vec::new();
-    for oid in revwalk {
-        let oid = oid.map_err(|e| e.to_string())?;
-        let commit = repo.find_commit(oid).map_err(|e| e.to_string())?;
-        let message = commit.summary().unwrap_or("no message").to_string();
-        let author = commit.author().name().unwrap_or("unknown").to_string();
-        let hash = commit.id().to_string();
-        let time = commit.time().seconds().to_string();
-        println!("commit: {}", message);
-        commits.push(CommitInfo { id: hash.clone(), hash, author, message, time });
+    let commits = revwalk
+        .filter_map(|oid| oid.ok())
+        .filter_map(|oid| repo.find_commit(oid).ok())
+        .map(|commit| CommitInfo {
+            id: commit.id().to_string(),
+            author: commit.author().name().unwrap_or("unknown").to_string(),
+            message: commit.summary().unwrap_or("").to_string(),
+            time: commit.time().seconds(),
+            parents: (0..commit.parent_count())
+                .map(|i| commit.parent_id(i).unwrap().to_string())
+                .collect(),
+            branches: vec![],
+        })
+        .collect();
+
+    Ok(commits)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn graph_log(path: String) -> Result<Vec<CommitInfo>, String> {
+    let repo = Repository::open(&path).map_err(|e| e.to_string())?;
+
+    // map each commit id -> branch names pointing to it
+    let mut branch_map: std::collections::HashMap<String, Vec<String>> =
+        std::collections::HashMap::new();
+    let branches = repo.branches(None).map_err(|e| e.to_string())?;
+    for branch in branches.filter_map(|b| b.ok()) {
+        let (branch, _) = branch;
+        if let (Some(name), Some(oid)) = (
+            branch.name().ok().flatten(),
+            branch.get().target(),
+        ) {
+            branch_map
+                .entry(oid.to_string())
+                .or_default()
+                .push(name.to_string());
+        }
     }
 
-    println!("total commits: {}", commits.len());
+    let mut revwalk = repo.revwalk().map_err(|e| e.to_string())?;
+    revwalk.set_sorting(Sort::TIME).map_err(|e| e.to_string())?;
+    revwalk.push_glob("refs/heads/*").map_err(|e| e.to_string())?;
+
+    let commits = revwalk
+        .filter_map(|oid| oid.ok())
+        .filter_map(|oid| repo.find_commit(oid).ok())
+        .map(|commit| {
+            let id = commit.id().to_string();
+            let branches = branch_map.remove(&id).unwrap_or_default();
+            CommitInfo {
+                author: format!(
+                    "{} <{}>",
+                    commit.author().name().unwrap_or("unknown"),
+                    commit.author().email().unwrap_or("")
+                ),
+                message: commit.summary().unwrap_or("").to_string(),
+                time: commit.time().seconds(),
+                parents: (0..commit.parent_count())
+                    .map(|i| commit.parent_id(i).unwrap().to_string())
+                    .collect(),
+                branches,
+                id,
+            }
+        })
+        .collect();
+
     Ok(commits)
 }

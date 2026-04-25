@@ -9,6 +9,7 @@ export const commands = {
 	branchesList: (path: string) => typedError<Branch[], string>(__TAURI_INVOKE("branches_list", { path })),
 	test: (text: string) => __TAURI_INVOKE<string>("test", { text }),
 	commitList: (path: string, branch: string) => typedError<CommitInfo[], string>(__TAURI_INVOKE("commit_list", { path, branch })),
+	graphLog: (path: string) => typedError<CommitInfo[], string>(__TAURI_INVOKE("graph_log", { path })),
 };
 
 /* Types */
@@ -21,10 +22,11 @@ export type Branch = {
 
 export type CommitInfo = {
 	id: string,
-	hash: string,
 	author: string,
 	message: string,
-	time: string,
+	time: number,
+	parents: string[],
+	branches: string[],
 };
 
 export type DropdownOption = {
