@@ -34,26 +34,17 @@ export class BranchesView implements OnInit {
       branch: {
         lineWidth: 4,
         spacing: 40,
-        label: {
-          font: 'normal 12',
-        },
+        label: { font: 'normal 12' },
       },
       commit: {
         spacing: 40,
-        dot: {
-          size: 12,
-          strokeColor: '#fff',
-          strokeWidth: 4,
-        },
-        message: {
-          font: 'normal 12',
-        },
+        dot: { size: 12, strokeColor: '#fff', strokeWidth: 4 },
+        message: { font: 'normal 12' },
       },
     }),
   };
 
   refreshing = input(false);
-
   protected readonly hoveredCommit = signal<CommitInfo | null>(null);
 
   constructor() {
@@ -70,10 +61,41 @@ export class BranchesView implements OnInit {
 
   private initUi(): void {
     invoke<CommitInfo[]>('graph_log', { path: 'C:/rust/tauriOne' }).then(
-      (commits) => {
-        this.renderGraph(commits);
-      },
+      (commits) => this.renderGraph(commits),
     );
+  }
+
+  // Walk first-parent chain from each branch tip to assign commits to branches.
+  // main is processed first so shared history belongs to main.
+  private assignBranches(commits: CommitInfo[]): Map<string, string> {
+    const commitMap = new Map(commits.map((c) => [c.id, c]));
+    const commitToBranch = new Map<string, string>();
+
+    const tips = commits.filter((c) => c.branches.length > 0);
+    tips.sort((a, b) => {
+      if (a.branches.includes('main')) return -1;
+      if (b.branches.includes('main')) return 1;
+      return b.time - a.time;
+    });
+
+    for (const tip of tips) {
+      const branchName = tip.branches[0];
+      let current: CommitInfo | undefined = tip;
+      while (current && !commitToBranch.has(current.id)) {
+        commitToBranch.set(current.id, branchName);
+        current = current.parents[0]
+          ? commitMap.get(current.parents[0])
+          : undefined;
+      }
+    }
+
+    for (const commit of commits) {
+      if (!commitToBranch.has(commit.id)) {
+        commitToBranch.set(commit.id, 'main');
+      }
+    }
+
+    return commitToBranch;
   }
 
   private renderGraph(commits: CommitInfo[]): void {
@@ -81,33 +103,35 @@ export class BranchesView implements OnInit {
     container.innerHTML = '';
     const gitGraph = createGitgraph(container, this.options);
     const branchMap = new Map<string, ReturnType<typeof gitGraph.branch>>();
+    const commitToBranch = this.assignBranches(commits);
 
-    const ordered = [...commits].reverse();
-    for (const commit of ordered) {
-      const branchName = commit.branches[0] ?? 'main';
-      if (!branchMap.has(branchName)) {
-        branchMap.set(branchName, gitGraph.branch(branchName));
+    const getOrCreateBranch = (name: string) => {
+      if (!branchMap.has(name)) {
+        branchMap.set(name, gitGraph.branch(name));
       }
-      branchMap.get(branchName)!.commit({
-        hash: commit.id.slice(0, 7),
-        subject: commit.message,
-        author: commit.author,
-        onMouseOver: (c) => {
-          this.hoveredCommit.set({
-            id: commit.id,
-            author: commit.author,
-            message: commit.message,
-            time: commit.time,
-            parents: commit.parents,
-            branches: commit.branches,
-          });
-          // show a tooltip, update a signal, etc.
-        },
-        onMouseOut: () => {
-          this.hoveredCommit.set(null);
-          // hide tooltip
-        },
-      });
+      return branchMap.get(name)!;
+    };
+
+    for (const commit of [...commits].reverse()) {
+      const branchName = commitToBranch.get(commit.id) ?? 'main';
+      const branch = getOrCreateBranch(branchName);
+
+      const isMerge = commit.parents.length >= 2;
+      const secondParentBranch = isMerge
+        ? commitToBranch.get(commit.parents[1])
+        : undefined;
+
+      if (isMerge && secondParentBranch && branchMap.has(secondParentBranch)) {
+        branch.merge(branchMap.get(secondParentBranch)!, commit.message);
+      } else {
+        branch.commit({
+          hash: commit.id.slice(0, 7),
+          subject: commit.message,
+          author: commit.author,
+          onMouseOver: () => this.hoveredCommit.set(commit),
+          onMouseOut: () => this.hoveredCommit.set(null),
+        });
+      }
     }
   }
 }
