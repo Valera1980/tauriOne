@@ -1,4 +1,5 @@
 #[tauri::command]
+#[specta::specta]
 pub fn test(text: String) -> String {
     println!("Hello from Rust! You said: {}", text);
     

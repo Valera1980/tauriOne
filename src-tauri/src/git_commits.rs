@@ -1,7 +1,8 @@
-use git2::{Repository, BranchType};
+use git2::{BranchType, Repository};
 use serde::Serialize;
+use specta::Type;
 
-#[derive(Serialize)]
+#[derive(Serialize, Type)]
 pub struct CommitInfo {
    id: String,
    hash: String,
@@ -11,6 +12,7 @@ pub struct CommitInfo {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn commit_list(path: String, branch: String) -> Result<Vec<CommitInfo>, String> {
     let repo = Repository::open(&path).map_err(|e| e.to_string())?;
 

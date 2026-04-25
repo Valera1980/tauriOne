@@ -1,7 +1,8 @@
 use git2::Repository;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use specta::Type;
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize, Type)]
 pub struct Branch {
     name: String,
     is_head: bool,
@@ -10,6 +11,7 @@ pub struct Branch {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn branches_list(path: String) -> Result<Vec<Branch>, String> {
     let repo = Repository::open(path).map_err(|e| e.to_string())?;
     let branches = repo.branches(None).map_err(|e| e.to_string())?;
