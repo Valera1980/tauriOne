@@ -77,10 +77,9 @@ export class BranchesView implements OnInit {
   }
 
   private renderGraph(commits: CommitInfo[]): void {
-    const gitGraph = createGitgraph(
-      this.graphContainer().nativeElement,
-      this.options,
-    );
+    const container = this.graphContainer().nativeElement;
+    container.innerHTML = '';
+    const gitGraph = createGitgraph(container, this.options);
     const branchMap = new Map<string, ReturnType<typeof gitGraph.branch>>();
 
     const ordered = [...commits].reverse();
