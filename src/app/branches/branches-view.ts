@@ -11,6 +11,7 @@ import { DatePipe } from '@angular/common';
 import { invoke } from '@tauri-apps/api/core';
 import { createGitgraph, templateExtend, TemplateName } from '@gitgraph/js';
 import { CommitInfo } from '../../bindings';
+import { resolve } from '@tauri-apps/api/path';
 
 @Component({
   selector: 'app-branches-view',
@@ -59,9 +60,12 @@ export class BranchesView implements OnInit {
     this.initUi();
   }
 
-  private initUi(): void {
-    invoke<CommitInfo[]>('graph_log', { path: 'C:/rust/tauriOne' }).then(
-      (commits) => this.renderGraph(commits),
+  private async initUi(): Promise<void> {
+    const currentPath = await resolve('.');
+    console.log('Loading graph for path:', currentPath);
+
+    invoke<CommitInfo[]>('graph_log', { path: currentPath }).then((commits) =>
+      this.renderGraph(commits),
     );
   }
 

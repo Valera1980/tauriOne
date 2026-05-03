@@ -50,7 +50,7 @@ pub fn commit_list(path: String, branch: String) -> Result<Vec<CommitInfo>, Stri
 #[tauri::command]
 #[specta::specta]
 pub fn graph_log(path: String) -> Result<Vec<CommitInfo>, String> {
-    let repo = Repository::open(&path).map_err(|e| e.to_string())?;
+    let repo = Repository::discover(&path).map_err(|e| e.to_string())?;
 
     // map each commit id -> branch names pointing to it
     let mut branch_map: std::collections::HashMap<String, Vec<String>> =
